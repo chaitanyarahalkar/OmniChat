@@ -1,0 +1,87 @@
+[
+    {
+        "type": "function",
+        "function": {
+            "name": "get_llm_response_pplx",
+            "description": "Uses the Perplexity Online LLM to get access to the most up to date and latest information. This function uses an LLM tied to a search API to make sure that the LLM has knowledge of the most up to date information. Use it when you need access to real time information and data that you may not necessarily have access to or whenever you do not have browsing capabilties, this can browse the web for you.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "The prompt to be sent to the LLM."
+                    }
+                },
+                "required": ["prompt"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_llm_response_dalle",
+            "description": "Use OpenAI DALLE3 to generate an image based on the prompt. Understand when the user wants to generate an image based on the prompt.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "The prompt to be sent to DALLE to generate the image."
+                    }
+                },
+                "required": ["prompt"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_llm_response_gpt4o_agent",
+            "description": "Use the agentic capabilities of GPT-4o to generate a response based on the prompt. Generally use this if the user wants to generate a specific file like a CSV, PDF etc. (except any image, please note that this should not be used for image generation as it is handled by a separate function.) or needs any execution capabilities.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "The prompt to be sent to the GPT-4o agent."
+                    }
+                },
+                "required": ["prompt"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_random_meme",
+            "description": "Use this function to pull a random meme from an API. Use this whenever user asks for a meme or a funny photo.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "The prompt to be sent to the API"
+                    }
+                },
+                "required": ["prompt"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_llm_response_gpto1_mini",
+            "description": "Use this function only when you are asked a hard problem to solve that you might need some reasoning abilities. Use this in case of tough to solve issues, problems, tasks related to complex tasks with broader understanding needed.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "The prompt to be sent to the API"
+                    }
+                },
+                "required": ["prompt"]
+            }
+        }
+    }
+]
