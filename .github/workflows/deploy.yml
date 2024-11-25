@@ -5,12 +5,17 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write # This gives write permission to the workflow
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v2
@@ -24,11 +29,13 @@ jobs:
       - name: Build
         working-directory: ./website
         env:
-          CI: false  # This prevents treating warnings as errors
+          CI: false
         run: npm run build
 
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@4.1.5
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
+          token: ${{ secrets.DEPLOY_TOKEN }}  # Use the token we created
           branch: gh-pages
           folder: website/build
+          clean: true
