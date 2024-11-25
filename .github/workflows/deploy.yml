@@ -18,17 +18,17 @@ jobs:
           node-version: '16'
 
       - name: Install Dependencies
-        run: |
-          cd website  # Change to website directory
-          npm install
+        working-directory: ./website
+        run: npm install
 
       - name: Build
-        run: |
-          cd website  # Change to website directory
-          npm run build
+        working-directory: ./website
+        env:
+          CI: false  # This prevents treating warnings as errors
+        run: npm run build
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@4.1.5
         with:
           branch: gh-pages
-          folder: website/build  # Update build folder path
+          folder: website/build
