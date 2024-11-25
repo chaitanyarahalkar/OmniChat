@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/omnichat/static/css/main.96816597.css",
+    "main.js": "/omnichat/static/js/main.8264a454.js",
+    "index.html": "/omnichat/index.html",
+    "main.96816597.css.map": "/omnichat/static/css/main.96816597.css.map",
+    "main.8264a454.js.map": "/omnichat/static/js/main.8264a454.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.96816597.css",
+    "static/js/main.8264a454.js"
+  ]
+}
