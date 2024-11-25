@@ -1,6 +1,6 @@
 # OmniChat: Your All-in-One AI Chat Companion
 
-Welcome to the future of conversation. OmniChat is not just another Telegram chatbot; it's a revolutionary AI-powered assistant that brings together the brilliance of multiple advanced AI models, including GPT-4o, Google Gemini, DALL-E 3, and Perplexity.ai, all under one roof. Imagine the ultimate Swiss Army knife for AI interactions—an intelligent companion that is always ready to engage, assist, create, and inspire. Whether you need quick answers, a creative partner, or an all-knowing guide, OmniChat is here to redefine how you interact with artificial intelligence, right in your Telegram chats as a versatile Telegram bot.
+Welcome to the future of conversation. OmniChat is not just another chatbot; it's a revolutionary AI-powered assistant that brings together the brilliance of multiple advanced AI models, including GPT-4o, Google Gemini, DALL-E 3, and Perplexity.ai, all under one roof. Imagine the ultimate Swiss Army knife for AI interactions—an intelligent companion that is always ready to engage, assist, create, and inspire. Whether you need quick answers, a creative partner, or an all-knowing guide, OmniChat is here to redefine how you interact with artificial intelligence, right in your Telegram chats as a versatile Telegram bot.
 
 ## Why Choose OmniChat?
 
@@ -69,7 +69,17 @@ OmniChat is built with flexibility and power in mind. It leverages the strengths
 - **Intelligent Request Routing**: OmniChat automatically routes your query to the most suitable AI model, ensuring you get optimal results every time.
 - **Modular Design**: Built to be extensible, OmniChat allows developers to add new capabilities with ease, making it a highly versatile platform.
 
-## Getting Started: Setup & Installation
+## Getting Started: Prerequisites & Setup
+
+### Step 1: Create a Telegram Bot
+
+Before setting up OmniChat, you need to create your own Telegram bot. Follow these instructions:
+
+1. **Open Telegram** and search for the BotFather ([https://t.me/botfather](https://t.me/botfather)).
+2. **Start a chat** with BotFather and type `/newbot` to create a new bot.
+3. **Follow the prompts** to name your bot and create a unique username. Once complete, you will receive a **Telegram Bot Token**—make sure to save it, as you'll need it later for configuration.
+
+### Step 2: Setup & Installation
 
 Setting up OmniChat is a breeze. Follow these simple steps to get your own AI companion up and running:
 
@@ -81,8 +91,7 @@ Setting up OmniChat is a breeze. Follow these simple steps to get your own AI co
    ```bash
    pip install -r requirements.txt
    ```
-3. **Configure API Keys**:
-   Open the `config.py` file and add your **Telegram Bot Token**, **OpenAI API Key**, and **Google Gemini API Key**.
+3. **Configure API Keys**: Open the `config.py` file and add your **Telegram Bot Token**, **OpenAI API Key**, and **Google Gemini API Key**.
 4. **Run the Bot**:
    ```bash
    python main.py
@@ -118,4 +127,3 @@ OmniChat is licensed under the [MIT License](link-here), meaning you’re free t
 OmniChat is provided as-is, intended primarily for research and educational purposes. The developers are not responsible for any misuse or generated content. Please use responsibly and ethically.
 
 ---
-
