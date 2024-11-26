@@ -1,6 +1,7 @@
 {
   "name": "website",
   "homepage": "/OmniChat",
+  "displayName": "OmniChat | Your AI Telegram Companion",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

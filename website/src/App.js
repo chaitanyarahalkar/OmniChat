@@ -16,6 +16,10 @@ const OmniChatWebsite = () => {
   const navRef = useRef(null);
 
   useEffect(() => {
+    document.title = 'OmniChat | Your AI Telegram Companion';
+  }, []);
+
+  useEffect(() => {
     const handleScroll = () => {
       if (navRef.current) {
         setIsSticky(window.scrollY > navRef.current.offsetTop);
