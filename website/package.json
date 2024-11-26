@@ -1,6 +1,6 @@
 {
   "name": "website",
-  "homepage": "https://chaitanyarahalkar.github.io/omnichat",
+  "homepage": "/OmniChat",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
