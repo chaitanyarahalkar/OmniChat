@@ -34,9 +34,9 @@ Ever felt like your assistant just isn’t up to date? OmniChat’s real-time br
 
 You don’t need to switch between tabs or devices—everything happens right within your Telegram bot chat.
 
-### 🖼 Visual Creativity Unleashed with DALL-E 3
+### 🖼 Visual Creativity Unleashed with DALL-E 3/FLUX or any Image Generation Model
 
-Words can paint pictures, but why stop there? With DALL-E 3 integrated into OmniChat, you can bring your imagination to life.
+Words can paint pictures, but why stop there? With image generation integrated into OmniChat, you can bring your imagination to life.
 
 - Just **describe the scene** you’re picturing—"A futuristic city floating above the clouds at sunset"—and see it transformed into a stunning, one-of-a-kind image.
 - **Visualize your ideas** for social posts, mood boards, or even presentations—all generated effortlessly.
