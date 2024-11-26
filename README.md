@@ -108,6 +108,93 @@ Curious about what OmniChat can do for you? Here are just a few ideas to get you
 - **Creative Image Generation**: Type "Generate an image of a dragon perched on a skyscraper" and let your imagination soar.
 - **Meme Request**: Just type "meme" and enjoy a humorous interlude, perfect for lightening up your day.
 
+## Expanding OmniChat: Adding Your Own Tools and Functionality
+
+OmniChat's power lies in its extensibility. You can easily add your own custom tools and functions to enhance its capabilities and tailor it to your specific needs. Let's explore how you can contribute to OmniChat's ever-growing toolkit.
+
+### Understanding the Meme Function Example
+
+The provided `get_random_meme` function serves as a perfect template for understanding how to integrate custom functionality. Let's break down its key components:
+
+```python
+import requests
+import random 
+
+MEME_API = "https://meme-api.com/gimme/{}"
+
+def get_random_meme(prompt):
+    """
+    Fetches a random meme URL from a predefined list of subreddits.
+
+    Args:
+        prompt (str): A prompt or keyword to fetch a meme. (Currently not used in the function)
+
+    Returns:
+        str: URL of the random meme fetched from the subreddit.
+    """
+    subreddits = ['dankmemes', 'shitposting', 'ProgrammerHumor', 'memes', '196']
+    r = requests.get(MEME_API.format(random.choice(subreddits)))
+    if r.ok:
+        return r.json()['url']
+```
+
+1. **Clear Definition:** The function has a descriptive name and a docstring explaining its purpose.
+2. **External API Integration:** It uses the `requests` library to interact with an external meme API.
+3. **Simple Input/Output:** It accepts a `prompt` (although not currently used) and returns a meme URL.
+4. **Error Handling:** It checks for a successful API response using `r.ok`.
+
+### Steps to Add Your Own Tools
+
+1. **Create Your Function:** Define a new Python function in the `functions.py` file. Ensure it has a descriptive name, a docstring, and handles inputs and outputs appropriately.  Example:
+
+   ```python
+   def get_weather(city):
+       """
+       Fetches the current weather for a given city.
+
+       Args:
+           city (str): The city name.
+
+       Returns:
+           str: The weather information.
+       """
+       # Your code to fetch weather data using an API or other means
+       # ...
+       return weather_info
+   ```
+
+2. **Register Your Function in `models.py`:** Add your function to the `available_functions` dictionary within the `get_llm_response` function in `models.py`:
+
+   ```python
+   available_functions = {
+       # ... existing functions
+       "get_weather": get_weather, # Add your function here
+   }
+   ```
+
+3. **Define a Tool in `tools.json`:**  Describe your tool in the `tools.json` file, specifying its name, description, and parameters:
+
+   ```json
+   {
+       "name": "get_weather",
+       "description": "Gets the current weather for a given city.",
+       "parameters": {
+           "type": "object",
+           "properties": {
+               "city": {
+                   "type": "string",
+                   "description": "The name of the city."
+               }
+           },
+           "required": ["city"]
+       }
+   }
+   ```
+
+4. **Test Your Integration:**  Interact with your bot in Telegram. GPT-4o should now be able to use your new tool when relevant to the user's query. For example, if a user asks "What's the weather in London?", GPT-4o should call your `get_weather` function with "London" as the argument.
+
+By following these steps, you can empower OmniChat with a wide range of custom tools, turning it into a truly personalized and powerful AI assistant. Remember to handle errors gracefully and provide clear documentation for your functions to ensure seamless integration.
+
 ## Contributing: Join the OmniChat Community
 
 OmniChat is an open playground for innovation. Contributions are always welcome, and we encourage developers, designers, and creatives alike to get involved:
