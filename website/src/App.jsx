@@ -204,7 +204,7 @@ const MainContent = () => {
 // Root App component with router
 const App = () => {
   return (
-    <Router basename="/OmniChat">
+    <Router>
       <Routes>
         <Route path="/" element={<MainContent />} />
         <Route path="/features" element={<FeaturesPage />} />
