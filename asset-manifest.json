@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/omnichat/static/css/main.96816597.css",
-    "main.js": "/omnichat/static/js/main.8264a454.js",
-    "index.html": "/omnichat/index.html",
-    "main.96816597.css.map": "/omnichat/static/css/main.96816597.css.map",
-    "main.8264a454.js.map": "/omnichat/static/js/main.8264a454.js.map"
+    "main.css": "/OmniChat/static/css/main.96816597.css",
+    "main.js": "/OmniChat/static/js/main.cc9960c0.js",
+    "index.html": "/OmniChat/index.html",
+    "main.96816597.css.map": "/OmniChat/static/css/main.96816597.css.map",
+    "main.cc9960c0.js.map": "/OmniChat/static/js/main.cc9960c0.js.map"
   },
   "entrypoints": [
     "static/css/main.96816597.css",
-    "static/js/main.8264a454.js"
+    "static/js/main.cc9960c0.js"
   ]
 }
