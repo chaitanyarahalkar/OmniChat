@@ -1,13 +1,14 @@
 {
   "files": {
-    "main.css": "/OmniChat/static/css/main.a6a6791c.css",
-    "main.js": "/OmniChat/static/js/main.3b41d9ea.js",
+    "main.css": "/OmniChat/static/css/main.75cb607b.css",
+    "main.js": "/OmniChat/static/js/main.3026c9ed.js",
+    "static/media/chaitanya.jpeg": "/OmniChat/static/media/chaitanya.4dcb083f1e79d5a1e0d3.jpeg",
     "index.html": "/OmniChat/index.html",
-    "main.a6a6791c.css.map": "/OmniChat/static/css/main.a6a6791c.css.map",
-    "main.3b41d9ea.js.map": "/OmniChat/static/js/main.3b41d9ea.js.map"
+    "main.75cb607b.css.map": "/OmniChat/static/css/main.75cb607b.css.map",
+    "main.3026c9ed.js.map": "/OmniChat/static/js/main.3026c9ed.js.map"
   },
   "entrypoints": [
-    "static/css/main.a6a6791c.css",
-    "static/js/main.3b41d9ea.js"
+    "static/css/main.75cb607b.css",
+    "static/js/main.3026c9ed.js"
   ]
 }
