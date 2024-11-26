@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="website/public/favicon.svg" alt="OmniChat Logo" width="200" height="200">
+</div>
+
 # OmniChat: Your All-in-One AI Chat Companion
 
 Welcome to the future of conversation. OmniChat is not just another chatbot; it's a revolutionary AI-powered assistant that brings together the brilliance of multiple advanced AI models, including GPT-4o, Google Gemini, DALL-E 3, and Perplexity.ai, all under one roof. Imagine the ultimate Swiss Army knife for AI interactions—an intelligent companion that is always ready to engage, assist, create, and inspire. Whether you need quick answers, a creative partner, or an all-knowing guide, OmniChat is here to redefine how you interact with artificial intelligence, right in your Telegram chats as a versatile Telegram bot.
