@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { 
   Globe, 
   Zap, 
@@ -6,14 +7,19 @@ import {
   PenTool, 
   Star, 
   Cpu, 
-  CodeXml,
   MessageCircle 
 } from 'lucide-react';
+import FeaturesPage from './FeaturesPage';
+import ModelsPage from './ModelsPage';
+import SetupPage from './SetupPage';
+import TeamPage from './TeamPage';
 
-const OmniChatWebsite = () => {
+// Main website content component
+const MainContent = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isSticky, setIsSticky] = useState(false);
   const navRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.title = 'OmniChat | Your AI Telegram Companion';
@@ -40,20 +46,24 @@ const OmniChatWebsite = () => {
       {/* Navigation */}
       <nav 
         ref={navRef}
-        className={`z-50 w-full transition-all duration-300 ${
-          isSticky ? 'fixed top-0 left-0 bg-black/50 backdrop-blur-lg shadow-lg' : 'absolute top-0 left-0'
-        }`}
+        className={`z-50 w-full transition-all duration-300 ${   isSticky ? 'fixed top-0 left-0 bg-[#0B1120] shadow-lg' : 'absolute top-0 left-0' }`}
       >
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center">
+          <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
             <Zap className="w-8 h-8 mr-2 text-yellow-400" />
             <h1 className="text-2xl font-bold">OmniChat</h1>
           </div>
           <div className="space-x-6">
-            {['overview', 'features', 'models', 'setup'].map(tab => (
+            {['overview', 'features', 'models', 'setup', 'team'].map(tab => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  if (tab === 'features') navigate('/features');
+                  else if (tab === 'models') navigate('/models');
+                  else if (tab === 'setup') navigate('/setup');
+                  else if (tab === 'team') navigate('/team');
+                  else setActiveTab(tab);
+                }}
                 className={`capitalize ${
                   activeTab === tab ? 'text-white font-bold' : 'text-white/50 hover:text-white'
                 }`}
@@ -78,8 +88,8 @@ const OmniChatWebsite = () => {
         <div className="relative z-10">
           <h1 className="text-6xl font-extrabold mb-6">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-purple-600">
-		Your Ultimate Telegram AI Companion
-	    </span>
+              Your Ultimate Telegram AI Companion
+            </span>
           </h1>
           <p className="text-xl max-w-3xl mx-auto mb-12 text-white/80">
             OmniChat is a revolutionary Telegram chatbot that brings together GPT-4o, DALL-E 3, and more in one powerful bot.
@@ -92,12 +102,12 @@ const OmniChatWebsite = () => {
             >
               <Zap className="mr-2" /> Add to Telegram
             </a>
-            <a 
-              href="#" 
-              className="px-8 py-3 border border-white/30 hover:bg-white/10 rounded-full transition-colors flex items-center"
+            <button 
+              onClick={() => navigate('/features')}
+              className="px-8 py-3 border border-white/30 hover:bg-white/10 rounded-full transition-colors flex items-center cursor-pointer"
             >
               <Layers className="mr-2" /> See Features
-            </a>
+            </button>
           </div>
         </div>
       </header>
@@ -191,4 +201,19 @@ const OmniChatWebsite = () => {
   );
 };
 
-export default OmniChatWebsite;
+// Root App component with router
+const App = () => {
+  return (
+    <Router basename="/OmniChat">
+      <Routes>
+        <Route path="/" element={<MainContent />} />
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/models" element={<ModelsPage />} />
+        <Route path="/setup" element={<SetupPage />} />
+        <Route path="/team" element={<TeamPage />} />
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;
