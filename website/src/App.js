@@ -76,8 +76,10 @@ const OmniChatWebsite = () => {
       {/* Hero Section */}
       <header className="relative container mx-auto px-4 pt-32 pb-16 text-center">
         <div className="relative z-10">
-          <h1 className="text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
-            Your Ultimate Telegram AI Companion
+          <h1 className="text-6xl font-extrabold mb-6">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-purple-600">
+		Your Ultimate Telegram AI Companion
+	    </span>
           </h1>
           <p className="text-xl max-w-3xl mx-auto mb-12 text-white/80">
             OmniChat is a revolutionary Telegram chatbot that brings together GPT-4o, DALL-E 3, and more in one powerful bot.
