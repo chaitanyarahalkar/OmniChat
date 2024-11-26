@@ -18,6 +18,7 @@ import TeamPage from './TeamPage';
 const MainContent = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isSticky, setIsSticky] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navRef = useRef(null);
   const navigate = useNavigate();
 
@@ -36,6 +37,17 @@ const MainContent = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const navItems = ['overview', 'features', 'models', 'setup', 'team'];
+
+  const handleNavClick = (tab) => {
+    if (tab === 'features') navigate('/features');
+    else if (tab === 'models') navigate('/models');
+    else if (tab === 'setup') navigate('/setup');
+    else if (tab === 'team') navigate('/team');
+    else setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="relative bg-gradient-to-br from-gray-900 via-blue-900 to-black min-h-screen text-white overflow-x-hidden">
       <div className="absolute inset-0 overflow-hidden z-0">
@@ -43,27 +55,25 @@ const MainContent = () => {
         <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-blue-500/30 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
       </div>
       
-      {/* Navigation */}
+      {/* Updated Navigation */}
       <nav 
         ref={navRef}
-        className={`z-50 w-full transition-all duration-300 ${   isSticky ? 'fixed top-0 left-0 bg-[#0B1120] shadow-lg' : 'absolute top-0 left-0' }`}
+        className={`z-50 w-full transition-all duration-300 ${
+          isSticky ? 'fixed top-0 left-0 bg-[#0B1120] shadow-lg' : 'absolute top-0 left-0'
+        }`}
       >
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
             <Zap className="w-8 h-8 mr-2 text-yellow-400" />
             <h1 className="text-2xl font-bold">OmniChat</h1>
           </div>
-          <div className="space-x-6">
-            {['overview', 'features', 'models', 'setup', 'team'].map(tab => (
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex space-x-6">
+            {navItems.map(tab => (
               <button
                 key={tab}
-                onClick={() => {
-                  if (tab === 'features') navigate('/features');
-                  else if (tab === 'models') navigate('/models');
-                  else if (tab === 'setup') navigate('/setup');
-                  else if (tab === 'team') navigate('/team');
-                  else setActiveTab(tab);
-                }}
+                onClick={() => handleNavClick(tab)}
                 className={`capitalize ${
                   activeTab === tab ? 'text-white font-bold' : 'text-white/50 hover:text-white'
                 }`}
@@ -72,39 +82,79 @@ const MainContent = () => {
               </button>
             ))}
           </div>
-          <a 
-            href="https://github.com/chaitanyarahalkar/omnichat" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-full transition-colors"
+
+          <div className="hidden md:block">
+            <a 
+              href="https://github.com/chaitanyarahalkar/omnichat" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-full transition-colors"
+            >
+              GitHub
+            </a>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button 
+            className="md:hidden p-2"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            GitHub
-          </a>
+            <div className="w-6 h-0.5 bg-white mb-1.5"></div>
+            <div className="w-6 h-0.5 bg-white mb-1.5"></div>
+            <div className="w-6 h-0.5 bg-white"></div>
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 w-full bg-[#0B1120] border-t border-white/10">
+            <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
+              {navItems.map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => handleNavClick(tab)}
+                  className={`capitalize text-left py-2 ${
+                    activeTab === tab ? 'text-white font-bold' : 'text-white/50'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+              <a 
+                href="https://github.com/chaitanyarahalkar/omnichat" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-full transition-colors text-center"
+              >
+                GitHub
+              </a>
+            </div>
+          </div>
+        )}
       </nav>
 
-      {/* Hero Section */}
+      {/* Update Hero Section for better mobile display */}
       <header className="relative container mx-auto px-4 pt-32 pb-16 text-center">
         <div className="relative z-10">
-          <h1 className="text-6xl font-extrabold mb-6">
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-6">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-purple-600">
               Your Ultimate Telegram AI Companion
             </span>
           </h1>
-          <p className="text-xl max-w-3xl mx-auto mb-12 text-white/80">
+          <p className="text-lg md:text-xl max-w-3xl mx-auto mb-12 text-white/80">
             OmniChat is a revolutionary Telegram chatbot that brings together GPT-4o, DALL-E 3, and more in one powerful bot.
             Experience the future of AI interaction right in your Telegram chats.
           </p>
-          <div className="flex justify-center space-x-4">
+          <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
             <a 
               href="#" 
-              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors flex items-center"
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors flex items-center justify-center"
             >
               <Zap className="mr-2" /> Add to Telegram
             </a>
             <button 
               onClick={() => navigate('/features')}
-              className="px-8 py-3 border border-white/30 hover:bg-white/10 rounded-full transition-colors flex items-center cursor-pointer"
+              className="px-8 py-3 border border-white/30 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
             >
               <Layers className="mr-2" /> See Features
             </button>
@@ -112,9 +162,9 @@ const MainContent = () => {
         </div>
       </header>
 
-      {/* Features Grid */}
+      {/* Update Features Grid for mobile */}
       <section className="relative container mx-auto px-4 py-16">
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-8">
             <h3 className="text-2xl font-semibold mb-6 text-white flex items-center">
               <Cpu className="w-8 h-8 text-blue-400 mr-3" />
