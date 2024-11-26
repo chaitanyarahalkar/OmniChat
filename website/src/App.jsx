@@ -13,6 +13,8 @@ import FeaturesPage from './FeaturesPage';
 import ModelsPage from './ModelsPage';
 import SetupPage from './SetupPage';
 import TeamPage from './TeamPage';
+import PricingPage from './PricingPage';
+
 
 // Main website content component
 const MainContent = () => {
@@ -37,12 +39,13 @@ const MainContent = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = ['overview', 'features', 'models', 'setup', 'team'];
+  const navItems = ['overview', 'features', 'models', 'setup', 'pricing', 'team'];
 
   const handleNavClick = (tab) => {
     if (tab === 'features') navigate('/features');
     else if (tab === 'models') navigate('/models');
     else if (tab === 'setup') navigate('/setup');
+    else if (tab === 'pricing') navigate('/pricing');
     else if (tab === 'team') navigate('/team');
     else setActiveTab(tab);
     setIsMobileMenuOpen(false);
@@ -260,6 +263,7 @@ const App = () => {
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/models" element={<ModelsPage />} />
         <Route path="/setup" element={<SetupPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/team" element={<TeamPage />} />
       </Routes>
     </Router>
