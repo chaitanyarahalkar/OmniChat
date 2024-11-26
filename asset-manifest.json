@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/static/css/main.75cb607b.css",
-    "main.js": "/static/js/main.f711ee0b.js",
+    "main.js": "/static/js/main.c609e236.js",
     "static/media/chaitanya.jpeg": "/static/media/chaitanya.4dcb083f1e79d5a1e0d3.jpeg",
     "index.html": "/index.html",
     "main.75cb607b.css.map": "/static/css/main.75cb607b.css.map",
-    "main.f711ee0b.js.map": "/static/js/main.f711ee0b.js.map"
+    "main.c609e236.js.map": "/static/js/main.c609e236.js.map"
   },
   "entrypoints": [
     "static/css/main.75cb607b.css",
-    "static/js/main.f711ee0b.js"
+    "static/js/main.c609e236.js"
   ]
 }
