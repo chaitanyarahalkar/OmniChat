@@ -148,19 +148,35 @@ const MainContent = () => {
             OmniChat is a revolutionary Telegram chatbot that brings together GPT-4o, DALL-E 3, and more in one powerful bot.
             Experience the future of AI interaction right in your Telegram chats.
           </p>
-          <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
+              <a 
+                href="#" 
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors flex items-center justify-center"
+              >
+                <Zap className="mr-2" /> Add to Telegram
+              </a>
+              <button 
+                onClick={() => navigate('/features')}
+                className="px-8 py-3 border border-white/30 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
+              >
+                <Layers className="mr-2" /> See Features
+              </button>
+            </div>
             <a 
-              href="#" 
-              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors flex items-center justify-center"
+              href="https://www.producthunt.com/posts/omnichat?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-omnichat" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="mt-6"
             >
-              <Zap className="mr-2" /> Add to Telegram
+              <img 
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=653153&theme=neutral" 
+                alt="OmniChat - OmniChat: Your All-in-One AI Chat Companion | Product Hunt" 
+                style={{ width: '250px', height: '54px' }}
+                width="250" 
+                height="54" 
+              />
             </a>
-            <button 
-              onClick={() => navigate('/features')}
-              className="px-8 py-3 border border-white/30 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
-            >
-              <Layers className="mr-2" /> See Features
-            </button>
           </div>
         </div>
       </header>
