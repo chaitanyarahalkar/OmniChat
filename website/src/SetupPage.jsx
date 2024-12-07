@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Zap,
@@ -18,6 +18,10 @@ import {
 
 const SetupPage = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'Setup | OmniChat';
+  }, []);
 
   const benefits = [
     {
@@ -80,23 +84,64 @@ const SetupPage = () => {
 
       {/* Navigation Bar */}
       <nav className="z-50 w-full fixed top-0 left-0 bg-[#0B1120] shadow-lg">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div 
-            className="flex items-center cursor-pointer" 
-            onClick={() => navigate('/')}
-          >
-            <Zap className="w-8 h-8 mr-2 text-yellow-400" />
-            <h1 className="text-2xl font-bold">OmniChat</h1>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <div 
+              className="flex items-center cursor-pointer" 
+              onClick={() => navigate('/')}
+            >
+              <Zap className="w-8 h-8 mr-2 text-yellow-400" />
+              <h1 className="text-2xl font-bold">OmniChat</h1>
+            </div>
+            <div className="hidden md:flex items-center justify-center flex-1 mx-8">
+              <div className="flex items-center space-x-8">
+                <button
+                  onClick={() => navigate('/features')}
+                  className="text-white/70 hover:text-white transition-colors"
+                >
+                  Features
+                </button>
+                <button
+                  onClick={() => navigate('/models')}
+                  className="text-white/70 hover:text-white transition-colors"
+                >
+                  Models
+                </button>
+                <button
+                  onClick={() => navigate('/setup')}
+                  className="text-white transition-colors font-semibold"
+                >
+                  Setup
+                </button>
+                <button
+                  onClick={() => navigate('/pricing')}
+                  className="text-white/70 hover:text-white transition-colors"
+                >
+                  Pricing
+                </button>
+                <button
+                  onClick={() => navigate('/team')}
+                  className="text-white/70 hover:text-white transition-colors"
+                >
+                  Team
+                </button>
+              </div>
+            </div>
+            <a 
+              href="https://github.com/chaitanyarahalkar/omnichat" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-full transition-colors"
+            >
+              GitHub
+            </a>
+            {/* Mobile menu button */}
+            <button className="md:hidden p-2">
+              <div className="w-6 h-0.5 bg-white mb-1.5"></div>
+              <div className="w-6 h-0.5 bg-white mb-1.5"></div>
+              <div className="w-6 h-0.5 bg-white"></div>
+            </button>
           </div>
-          <a 
-            href="https://github.com/chaitanyarahalkar/omnichat" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-full transition-colors flex items-center"
-          >
-            <Github className="w-5 h-5 mr-2" />
-            View on GitHub
-          </a>
         </div>
       </nav>
 
