@@ -143,7 +143,7 @@ const MainContent = () => {
               <Bot className="mr-2" /> Try on Telegram
             </button>
             <button 
-              onClick={() => navigate('/setup')}
+              onClick={() => navigate('https://t.me/crchatgptbot')}
               className="px-8 py-3 border border-white/30 hover:bg-white/10 rounded-full transition-colors flex items-center"
             >
               <Code className="mr-2" /> Explore API
