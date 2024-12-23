@@ -137,13 +137,13 @@ const MainContent = () => {
           </p>
           <div className="flex justify-center space-x-4 mb-8">
             <button 
-              onClick={() => navigate('/features')}
+              onClick={() => navigate('https://t.me/crchatgptbot')}
               className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors flex items-center"
             >
               <Bot className="mr-2" /> Try on Telegram
             </button>
             <button 
-              onClick={() => navigate('https://t.me/crchatgptbot')}
+              onClick={() => navigate('/setup')}
               className="px-8 py-3 border border-white/30 hover:bg-white/10 rounded-full transition-colors flex items-center"
             >
               <Code className="mr-2" /> Explore API
