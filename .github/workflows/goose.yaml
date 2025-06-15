@@ -10,7 +10,7 @@ permissions:
   issues: write
 
 env:
-  PROVIDER_API_KEY: ${{ secrets.PROVIDER_API_KEY }}
+  PROVIDER_API_KEY: ${{ secrets.OPENAI_API_KEY }}
   PR_NUMBER: ${{ github.event.pull_request.number }}
 
 jobs:
@@ -47,8 +47,8 @@ jobs:
       - name: Configure Goose
         run: |
           mkdir -p ~/.config/goose
-          echo "GOOSE_PROVIDER: REPLACE_WITH_PROVIDER" > ~/.config/goose/config.yaml
-          echo "GOOSE_MODEL: REPLACE_WITH_MODEL" >> ~/.config/goose/config.yaml
+          echo "GOOSE_PROVIDER: OpenAI" > ~/.config/goose/config.yaml
+          echo "GOOSE_MODEL: o3" >> ~/.config/goose/config.yaml
           echo "keyring: false" >> ~/.config/goose/config.yaml
 
       - name: Create instructions for Goose
