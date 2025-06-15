@@ -23,8 +23,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up GitHub CLI
-        uses: actions/setup-gh@v4
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
       - name: Gather PR information
         run: |
@@ -53,13 +53,15 @@ jobs:
 
       - name: Create instructions for Goose
         run: |
-          echo "Create a summary of the changes provided. Don't provide any session or logging details." > instructions.txt
-          echo "The summary for each file should be brief and structured as:" >> instructions.txt
-          echo "\`<filename/path>\`" >> instructions.txt
-          echo "  - dot points of changes" >> instructions.txt
-          echo "You don't need any extensions, don't mention extensions at all." >> instructions.txt
-          echo "The changes to summarise are:" >> instructions.txt
-          cat changes.txt >> instructions.txt
+          {
+            echo "Create a summary of the changes provided. Don't provide any session or logging details."
+            echo "The summary for each file should be brief and structured as:"
+            echo "\`<filename/path>\`"
+            echo "  - dot points of changes"
+            echo "You don't need any extensions, don't mention extensions at all."
+            echo "The changes to summarise are:"
+            cat changes.txt
+          } > instructions.txt
 
       - name: Show instructions (debug)
         run: cat instructions.txt
