@@ -116,7 +116,7 @@ jobs:
             '**Task**  Comment on the diff hunk below with constructive feedback or praise (≤ 60 words).' \
             '' 'Diff:' "$HDR" "$BODY")
 
-          COMMENT=$(printf '%s\n' "$PROMPT" | goose run --quiet --instructions -)
+          COMMENT=$(printf '%s\n' "$PROMPT" | goose run --instructions -)
           [ -z "$COMMENT" ] && continue
 
           gh api -X POST \
