@@ -114,7 +114,7 @@ jobs:
               "$BODY")
 
             # call Goose
-            SUGGESTION=$(printf '%s\n' "$PROMPT" | goose run --quiet --instructions -)
+            SUGGESTION=$(printf '%s\n' "$PROMPT" | goose run --instructions -)
             # skip if Goose returns nothing
             [ -z "$SUGGESTION" ] && continue
 
