@@ -89,7 +89,7 @@ Want to see OmniChat in action? Try our Telegram bot integration:
 
 ## Documentation
 
-For detailed API documentation and examples, visit our [Setup Guide](https://tryomni.chat/setup).
+For detailed API documentation, examples and demo visit our [Setup Guide](https://tryomni.chat/setup).
 
 ## Contributing
 
