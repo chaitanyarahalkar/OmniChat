@@ -1,102 +1,131 @@
 name: Goose Inline Reviewer
-on: [pull_request]
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
 
 permissions:
-  pull-requests: write
+  pull-requests: write   # create review comments
   contents: read
 
 env:
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}   # 👈 MUST be provider-specific
-  GOOSE_DISABLE_KEYRING: "1"
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  GOOSE_DISABLE_KEYRING: "1"          # disable desktop key-ring look-ups
 
 jobs:
   review:
     runs-on: ubuntu-latest
+
     steps:
-    # ------------------------------------------------ checkout & tooling
+    # ──────────────────────────────────────────────────────────────
+    # 1  Checkout & basic tooling
+    # ──────────────────────────────────────────────────────────────
     - uses: actions/checkout@v4
-      with: {fetch-depth: 0}
+      with: { fetch-depth: 0 }
 
-    - name: Install jq
-      run: sudo apt-get update -y && sudo apt-get install -y jq
+    - name: Ensure jq is present
+      run: |
+        if ! command -v jq >/dev/null 2>&1; then
+          sudo apt-get update -y && sudo apt-get install -y jq
+        fi
 
-    - name: gh auth
+    - name: Authenticate gh
       run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-    # ------------------------------------------------ Goose
-    - name: Install Goose
+    # ──────────────────────────────────────────────────────────────
+    # 2  Install & configure Goose
+    # ──────────────────────────────────────────────────────────────
+    - name: Install Goose CLI
       run: |
+        mkdir -p "$HOME/bin"
         curl -fsSL https://github.com/block/goose/releases/download/stable/download_cli.sh \
-        | CONFIGURE=false INSTALL_PATH="$HOME/bin" bash
+          | CONFIGURE=false INSTALL_PATH="$HOME/bin" bash
         echo "$HOME/bin" >> "$GITHUB_PATH"
+
+    - name: Minimal Goose config
+      run: |
         mkdir -p ~/.config/goose
         printf 'GOOSE_PROVIDER: openai\nGOOSE_MODEL: gpt-4o\nkeyring: false\n' \
           > ~/.config/goose/config.yaml
 
-    # ------------------------------------------------ gather diff & head SHA
-    - name: Pull patch list
+    # ──────────────────────────────────────────────────────────────
+    # 3  Fetch PR file list (includes patch) & head commit SHA
+    # ──────────────────────────────────────────────────────────────
+    - name: Fetch PR metadata
       run: |
         gh api "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files?per_page=100" > files.json
         gh api "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}" --jq .head.sha > head.txt
 
-    # ------------------------------------------------ build hunks.json
-    - name: Build hunk objects
+    # ──────────────────────────────────────────────────────────────
+    # 4  Build hunks.json via embedded Python
+    #     -> one JSON line per hunk with:
+    #        path, commit_id, start_line, end_line, header, body
+    # ──────────────────────────────────────────────────────────────
+    - name: Build hunks.json
       run: |
-        python - <<'PY'
-        import json, re, pathlib, sys
-        files = json.load(open('files.json'))
-        sha = pathlib.Path('head.txt').read_text().strip()
-        out = []
+        python <<'PY'
+        import json, pathlib
+        files   = json.load(open('files.json'))
+        sha     = pathlib.Path('head.txt').read_text().strip()
+        outlines = []
         for f in files:
-            p = f.get('patch')
-            if not p: continue
-            lines = p.splitlines()
+            patch = f.get("patch") or ""
+            lines = patch.splitlines()
             i = 0
             while i < len(lines):
-                if lines[i].startswith('@@ '):
-                    start = i+1                         # first real line
-                    while start < len(lines) and lines[start].startswith('@@ '):
-                        start += 1
-                    if start >= len(lines): break
-                    # position is 1-based index in full patch
-                    out.append({
-                        "path": f["filename"],
-                        "commit_id": sha,
-                        "position": start+1,
-                        "header": lines[i],
-                        "body": "\n".join(lines[start:start+30])  # 30‐line window
-                    })
-                    i = start
+                if lines[i].startswith("@@ "):
+                    header = lines[i]
+                    j = i + 1
+                    while j < len(lines) and not lines[j].startswith("@@ "):
+                        j += 1
+                    # first real diff line is i+1, last is j-1
+                    if j - i > 1:                      # ensure the hunk has content
+                        outlines.append(json.dumps({
+                            "path":       f["filename"],
+                            "commit_id":  sha,
+                            "start_line": i + 2,        # +2: one-based & skip @@ header
+                            "end_line":   j,            # one-based
+                            "header":     header,
+                            "body":       "\n".join(lines[i+1:j])
+                        }, separators=(',', ':')))
+                    i = j
                 else:
                     i += 1
-        open('hunks.json','w').write("\n".join(json.dumps(o) for o in out))
+        pathlib.Path("hunks.json").write_text("\n".join(outlines))
         PY
 
-    # ------------------------------------------------ call Goose & comment
+    # ──────────────────────────────────────────────────────────────
+    # 5  Loop over hunks → Goose → post multi-line inline comment
+    # ──────────────────────────────────────────────────────────────
     - name: Comment per hunk
       run: |
         PR=${{ github.event.pull_request.number }}
         REPO=${{ github.repository }}
         while IFS= read -r HUNK; do
-          path=$(echo "$HUNK" | jq -r .path)
-          pos=$(echo  "$HUNK" | jq -r .position)
-          sha=$(echo  "$HUNK" | jq -r .commit_id)
-          hdr=$(echo  "$HUNK" | jq -r .header)
-          body=$(echo "$HUNK" | jq -r .body)
+          [ -z "$HUNK" ] && continue
+          FILE_PATH=$(echo "$HUNK" | jq -r .path)
+          START=$(echo      "$HUNK" | jq -r .start_line)
+          END=$(echo        "$HUNK" | jq -r .end_line)
+          SHA=$(echo        "$HUNK" | jq -r .commit_id)
+          HDR=$(echo        "$HUNK" | jq -r .header)
+          BODY=$(echo       "$HUNK" | jq -r .body)
 
-          prompt=$(printf '%s\n' \
-            "You are a senior engineer reviewing a pull request." \
-            "" "Give one short, constructive comment on the diff hunk that follows." \
-            "" "Diff:" "$hdr" "$body")
-          comment=$(printf '%s\n' "$prompt" | goose run --instructions -)
+          PROMPT=$(printf '%s\n' \
+            'You are a senior engineer reviewing a pull request.' \
+            '' \
+            '**Task**  Comment on the diff hunk below with constructive feedback or praise (≤ 60 words).' \
+            '' 'Diff:' "$HDR" "$BODY")
 
-          echo "---- Goose says ----"; echo "$comment"; echo "-------------------"
+          COMMENT=$(printf '%s\n' "$PROMPT" | goose run --quiet --instructions -)
+          [ -z "$COMMENT" ] && continue
 
-          [ -z "$comment" ] && continue
           gh api -X POST \
-            -f body="$comment" \
-            -f commit_id="$sha" \
-            -f path="$path" \
-            -f position="$pos" \
-            "repos/$REPO/pulls/$PR/comments"
+            -f body="$COMMENT" \
+            -f commit_id="$SHA" \
+            -f path="$FILE_PATH" \
+            -f start_line="$START" \
+            -f start_side=RIGHT \
+            -f line="$END" \
+            -f side=RIGHT \
+            "/repos/$REPO/pulls/$PR/comments"
         done < hunks.json
