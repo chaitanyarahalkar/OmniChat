@@ -47,7 +47,7 @@ jobs:
       - name: Configure Goose
         run: |
           mkdir -p ~/.config/goose
-          echo "GOOSE_PROVIDER: OpenAI" > ~/.config/goose/config.yaml
+          echo "GOOSE_PROVIDER: openai" > ~/.config/goose/config.yaml
           echo "GOOSE_MODEL: o3" >> ~/.config/goose/config.yaml
           echo "keyring: false" >> ~/.config/goose/config.yaml
 
