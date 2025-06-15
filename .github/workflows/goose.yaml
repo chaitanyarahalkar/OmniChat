@@ -1,70 +1,102 @@
-name: Goose PR Summary Comment
-
-on:
-  pull_request:
-    types: [opened, synchronize, reopened, labeled]
+name: Goose Inline Reviewer
+on: [pull_request]
 
 permissions:
-  pull-requests: write   # needed for gh pr comment
+  pull-requests: write
   contents: read
 
-env:                     # <<— Goose looks for PROVIDER_API_KEY
-  PROVIDER_API_KEY: ${{ secrets.OPENAI_API_KEY }}   # rename secret if you prefer
-  GOOSE_DISABLE_KEYRING: "1"                        # skip desktop keyring
+env:
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}   # 👈 MUST be provider-specific
+  GOOSE_DISABLE_KEYRING: "1"
 
 jobs:
   review:
     runs-on: ubuntu-latest
-
     steps:
+    # ------------------------------------------------ checkout & tooling
     - uses: actions/checkout@v4
       with: {fetch-depth: 0}
 
-    - name: Ensure jq is present
+    - name: Install jq
       run: sudo apt-get update -y && sudo apt-get install -y jq
 
-    - name: Authenticate gh
+    - name: gh auth
       run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-    # ── Install Goose ─────────────────────────────────────────────────────
-    - name: Install Goose CLI
+    # ------------------------------------------------ Goose
+    - name: Install Goose
       run: |
-        mkdir -p "$HOME/.local/bin"
         curl -fsSL https://github.com/block/goose/releases/download/stable/download_cli.sh \
-          | CONFIGURE=false INSTALL_PATH="$HOME/.local/bin" bash
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-    - name: Tiny Goose config
-      run: |
+        | CONFIGURE=false INSTALL_PATH="$HOME/bin" bash
+        echo "$HOME/bin" >> "$GITHUB_PATH"
         mkdir -p ~/.config/goose
         printf 'GOOSE_PROVIDER: openai\nGOOSE_MODEL: gpt-4o\nkeyring: false\n' \
           > ~/.config/goose/config.yaml
 
-    # ── Gather the full diff and feed it to Goose ────────────────────────
-    - name: Build diff summary with Goose
-      id: goose_summarise
+    # ------------------------------------------------ gather diff & head SHA
+    - name: Pull patch list
       run: |
-        # Pull full unified diff
-        gh pr diff ${{ github.event.pull_request.number }} > full.patch
+        gh api "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files?per_page=100" > files.json
+        gh api "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}" --jq .head.sha > head.txt
 
-        # Create instruction
-        printf '%s\n' \
-          "You are a senior engineer reviewing a pull request." \
-          "" \
-          "Summarise the changes below; point out any potential issues and praise good practices." \
-          "Keep it under 250 words; bullet points welcome." \
-          "" \
-          "Diff follows:" \
-          "$(cat full.patch)" > instructions.txt
-
-        # Run Goose
-        COMMENT=$(goose run --instructions instructions.txt)
-        echo "COMMENT<<EOF" >> $GITHUB_ENV
-        echo "$COMMENT"     >> $GITHUB_ENV
-        echo "EOF"          >> $GITHUB_ENV
-
-    # ── Post one top-level PR comment ────────────────────────────────────
-    - name: Post summary comment
+    # ------------------------------------------------ build hunks.json
+    - name: Build hunk objects
       run: |
-        gh pr comment ${{ github.event.pull_request.number }} \
-          --body "$COMMENT"
+        python - <<'PY'
+        import json, re, pathlib, sys
+        files = json.load(open('files.json'))
+        sha = pathlib.Path('head.txt').read_text().strip()
+        out = []
+        for f in files:
+            p = f.get('patch')
+            if not p: continue
+            lines = p.splitlines()
+            i = 0
+            while i < len(lines):
+                if lines[i].startswith('@@ '):
+                    start = i+1                         # first real line
+                    while start < len(lines) and lines[start].startswith('@@ '):
+                        start += 1
+                    if start >= len(lines): break
+                    # position is 1-based index in full patch
+                    out.append({
+                        "path": f["filename"],
+                        "commit_id": sha,
+                        "position": start+1,
+                        "header": lines[i],
+                        "body": "\n".join(lines[start:start+30])  # 30‐line window
+                    })
+                    i = start
+                else:
+                    i += 1
+        open('hunks.json','w').write("\n".join(json.dumps(o) for o in out))
+        PY
+
+    # ------------------------------------------------ call Goose & comment
+    - name: Comment per hunk
+      run: |
+        PR=${{ github.event.pull_request.number }}
+        REPO=${{ github.repository }}
+        while IFS= read -r HUNK; do
+          path=$(echo "$HUNK" | jq -r .path)
+          pos=$(echo  "$HUNK" | jq -r .position)
+          sha=$(echo  "$HUNK" | jq -r .commit_id)
+          hdr=$(echo  "$HUNK" | jq -r .header)
+          body=$(echo "$HUNK" | jq -r .body)
+
+          prompt=$(printf '%s\n' \
+            "You are a senior engineer reviewing a pull request." \
+            "" "Give one short, constructive comment on the diff hunk that follows." \
+            "" "Diff:" "$hdr" "$body")
+          comment=$(printf '%s\n' "$prompt" | goose run --instructions -)
+
+          echo "---- Goose says ----"; echo "$comment"; echo "-------------------"
+
+          [ -z "$comment" ] && continue
+          gh api -X POST \
+            -f body="$comment" \
+            -f commit_id="$sha" \
+            -f path="$path" \
+            -f position="$pos" \
+            "repos/$REPO/pulls/$PR/comments"
+        done < hunks.json
