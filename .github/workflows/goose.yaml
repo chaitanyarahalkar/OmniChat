@@ -12,7 +12,7 @@ permissions:
 env:
   PROVIDER_API_KEY: ${{ secrets.OPENAI_API_KEY }}
   PR_NUMBER: ${{ github.event.pull_request.number }}
-
+  GOOSE_DISABLE_KEYRING: "1"
 jobs:
   goose-comment:
     runs-on: ubuntu-latest
