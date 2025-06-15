@@ -5,30 +5,38 @@ on:
     types: [opened, synchronize, reopened, labeled]
 
 permissions:
-  pull-requests: write
+  pull-requests: write   # create inline review comments
   contents: read
 
 env:
-  # Put your provider key in this repo/org secret
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  # Prevent Goose from touching a non-existent keyring on the runner
-  GOOSE_DISABLE_KEYRING: "1"
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}   # or your provider key
+  GOOSE_DISABLE_KEYRING: "1"                      # skip desktop keyring
 
 jobs:
   review:
     runs-on: ubuntu-latest
 
     steps:
-      # 1 — checkout & auth ----------------------------------------------------
+      # ------------------------------------------------------------------
+      # 1.  Checkout and basic tooling
+      # ------------------------------------------------------------------
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Authenticate gh
+      - name: Ensure jq is available
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update -y
+            sudo apt-get install -y jq
+          fi
 
-      # 2 — install Goose ------------------------------------------------------
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      # ------------------------------------------------------------------
+      # 2.  Install and configure Goose
+      # ------------------------------------------------------------------
       - name: Install Goose CLI
         run: |
           mkdir -p "$HOME/.local/bin"
@@ -39,70 +47,82 @@ jobs:
       - name: Minimal Goose config
         run: |
           mkdir -p ~/.config/goose
-          printf '%s\n%s\n%s\n' \
+          printf '%s\n' \
             'GOOSE_PROVIDER: openai' \
-            'GOOSE_MODEL: gpt-4o' \
+            'GOOSE_MODEL: o3' \
             'keyring: false' \
             > ~/.config/goose/config.yaml
 
-      # 3 — get diff as JSON ---------------------------------------------------
-      - name: Fetch PR diff JSON
+      # ------------------------------------------------------------------
+      # 3.  Fetch PR files (includes .patch field)
+      # ------------------------------------------------------------------
+      - name: Fetch PR files
         run: |
-          gh pr view ${{ github.event.pull_request.number }} \
-            --json files --jq '.files' > files.json
+          gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files?per_page=100" \
+            > files.json
 
-      # 4 — loop over hunks, ask Goose, post inline comments -------------------
+      # ------------------------------------------------------------------
+      # 4.  Convert each patch into per-hunk JSON
+      # ------------------------------------------------------------------
+      - name: Build hunk list
+        run: |
+          jq -c '
+            .[]
+            | {path: .filename, patch: .patch}
+            | select(.patch)                               # skip binaries
+            | . as $f
+            | ($f.patch
+                | sub("\\\\ No newline at end of file$";"") # strip Git marker
+                | split("@@ ")                              # split on hunk headers
+                | .[1:]                                     # drop preamble
+                | map({
+                    path:   $f.path,
+                    header: ("@@ " + (split("\n")[0])),
+                    body:   (split("\n")[1:] | join("\n"))
+                  })
+              )
+            | .[]
+          ' files.json > hunks.json
+
+      # ------------------------------------------------------------------
+      # 5.  Loop over hunks → Goose → inline review comment
+      # ------------------------------------------------------------------
       - name: Review hunks with Goose
         run: |
           set -e
-          pr=${{ github.event.pull_request.number }}
-          repo=${{ github.repository }}
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          REPO_NAME=${{ github.repository }}
 
-          # Build per-hunk JSON: [{path, header, body}, …]
-          jq -r '
-            .[] | select(.patch != null) |
-            {path: .path, patch: .patch} |
-            (.patch | split("\n@@ ") | .[1:]) as $chunks |
-            reduce ($chunks[]) as $c ([];
-              . + [{
-                path: .path,
-                header: ("@@ " + ($c|split("\n")[0])),
-                body:  ($c|split("\n")[1:] | join("\n"))
-              }]
-            )
-          ' files.json > hunks.json
+          jq -c . hunks.json | while read -r hunk; do
+            FILE_PATH=$(echo "$hunk" | jq -r .path)
+            HEADER=$(echo "$hunk"   | jq -r .header)
+            BODY=$(echo "$hunk"     | jq -r .body)
 
-          # Iterate over each hunk
-          jq -c '.[]' hunks.json | while read h; do
-            path=$(echo "$h" | jq -r .path)
-            header=$(echo "$h" | jq -r .header)
-            body=$(echo "$h"   | jq -r .body)
+            # first new-file line number for this hunk
+            START_LINE=$(echo "$HEADER" | sed -E 's/.*\+([0-9]+).*/\1/')
 
-            # extract starting new-file line number
-            pos=$(echo "$header" | sed -E 's/.*\+([0-9]+).*/\1/')
+            # build prompt
+            PROMPT=$(printf '%s\n' \
+              "You are a senior engineer reviewing a pull request." \
+              "" \
+              "**Task**" \
+              "Comment on the diff hunk below with constructive feedback or praise." \
+              "Keep it friendly and concise (≤ 60 words)." \
+              "" \
+              "Diff:" \
+              "$HEADER" \
+              "$BODY")
 
-            # build prompt & call Goose
-            prompt=$(printf '%s\n' \
-              'You are a senior engineer reviewing a pull request.' \
-              '' \
-              '**Task**' \
-              'Comment on the diff hunk below with constructive feedback or praise.' \
-              'Keep it friendly and concise (≤ 60 words).' \
-              '' \
-              'Diff:' \
-              "$header" \
-              "$body")
+            # call Goose
+            SUGGESTION=$(printf '%s\n' "$PROMPT" | goose run --quiet --instructions -)
+            # skip if Goose returns nothing
+            [ -z "$SUGGESTION" ] && continue
 
-            suggestion=$(printf '%s\n' "$prompt" | goose run --quiet --instructions -)
-
-            # skip empty output
-            [ -z "$suggestion" ] && continue
-
-            # post inline comment
+            # post inline review comment
             gh api -X POST \
-              -f body="$suggestion" \
-              -f path="$path" \
-              -f line="$pos" \
+              -f body="$SUGGESTION" \
+              -f path="$FILE_PATH" \
+              -f line="$START_LINE" \
               -f side="RIGHT" \
-              "repos/$repo/pulls/$pr/comments"
+              "repos/$REPO_NAME/pulls/$PR_NUMBER/comments"
           done
