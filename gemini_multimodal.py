@@ -1,93 +1,102 @@
 """
-Install the Google AI Python SDK
-
-$ pip install google-generativeai
-
-See the getting started guide for more information:
-https://ai.google.dev/gemini-api/docs/get-started/python
+Gemini multimodal helper – single-file, modular style.
+Install Google AI Python SDK first:
+    pip install google-generativeai
 """
 
 import os
 import time
-from config import API_TOKEN
 import google.generativeai as genai
-from model_config import GEMINI_MODEL_NAME, GEMINI_GENERATION_CONFIG, GEMINI_SAFETY_SETTINGS
+from config import API_TOKEN
+from model_config import (
+    GEMINI_MODEL_NAME,
+    GEMINI_GENERATION_CONFIG,
+    GEMINI_SAFETY_SETTINGS,
+)
 
-genai.configure(api_key=API_TOKEN)
+# ──────────────────────────────────────────────────────────────────────────────
+# Configuration helpers
+# ──────────────────────────────────────────────────────────────────────────────
+def _configure_gemini() -> None:
+    """Initialises the generative-ai client with your API key."""
+    genai.configure(api_key=API_TOKEN)
 
-def upload_to_gemini(path, mime_type=None):
-  """Uploads the given file to Gemini.
 
-  Args:
-    path (str): The file path to upload.
-    mime_type (str, optional): The MIME type of the file.
+def _get_model() -> genai.GenerativeModel:
+    """Returns a ready-to-chat Gemini model instance."""
+    return genai.GenerativeModel(
+        model_name=GEMINI_MODEL_NAME,
+        safety_settings=GEMINI_SAFETY_SETTINGS,
+        generation_config=GEMINI_GENERATION_CONFIG,
+    )
 
-  Returns:
-    File: The uploaded file object.
-  """
-  file = genai.upload_file(path, mime_type=mime_type, display_name=path)
-  return file
 
-def wait_for_files_active(*files):
-  """Waits for the given files to be active.
+# ──────────────────────────────────────────────────────────────────────────────
+# File-handling utilities
+# ──────────────────────────────────────────────────────────────────────────────
+def _upload_to_gemini(path: str, mime_type: str | None = None):
+    """Uploads a local file and returns the Gemini File object."""
+    return genai.upload_file(path, mime_type=mime_type, display_name=path)
 
-  Args:
-    files (list): List of file objects to wait for.
 
-  Raises:
-    Exception: If any file fails to process.
-  """
-  for name in (file.name for file in files):
-    file = genai.get_file(name)
-    while file.state.name == "PROCESSING":
-      time.sleep(10)
-      file = genai.get_file(name)
-    if file.state.name != "ACTIVE":
-      raise Exception(f"File {file.name} failed to process")
-  
-  for file in files:
-    os.remove(file.display_name)
+def _wait_for_files_active(*files) -> None:
+    """
+    Blocks until every supplied Gemini File reaches ACTIVE state,
+    raises if any end up in a failed state and finally deletes the local copies.
+    """
+    for name in (f.name for f in files):
+        file_obj = genai.get_file(name)
+        while file_obj.state.name == "PROCESSING":
+            time.sleep(10)
+            file_obj = genai.get_file(name)
+        if file_obj.state.name != "ACTIVE":
+            raise RuntimeError(f"File {file_obj.name} failed to process")
 
-def get_llm_response_gemini_multimodal(file_name, caption, mime_type):
-  """Gets a response from the Gemini multimodal model.
+    for file_obj in files:
+        try:
+            os.remove(file_obj.display_name)
+        except FileNotFoundError:
+            pass  # If the file was already removed or never existed locally
 
-  Args:
-    file_name (str): The name of the file to upload.
-    caption (str): The caption to include in the prompt.
-    mime_type (str): The MIME type of the file.
 
-  Returns:
-    str: The response text from the model.
-  """
-  video_drive0 = upload_to_gemini(file_name, mime_type=mime_type)
+# ──────────────────────────────────────────────────────────────────────────────
+# Chat orchestration
+# ──────────────────────────────────────────────────────────────────────────────
+def get_llm_response_gemini_multimodal(
+    file_path: str,
+    caption: str = "",
+    mime_type: str | None = None,
+) -> str:
+    """
+    Sends a multimodal prompt to Gemini using the given file and caption,
+    returning the model’s text reply or a graceful error string.
+    """
+    _configure_gemini()
 
-  wait_for_files_active(video_drive0)
+    try:
+        gemini_file = _upload_to_gemini(file_path, mime_type)
+        _wait_for_files_active(gemini_file)
 
-  model = genai.GenerativeModel(
-    model_name=GEMINI_MODEL_NAME,
-    safety_settings=GEMINI_SAFETY_SETTINGS,
-    generation_config=GEMINI_GENERATION_CONFIG,
-  )
+        model = _get_model()
+        prompt = f"explain and analyze this for me. don't be super verbose with your responses.{caption}"
+        chat = model.start_chat(
+            history=[
+                {"role": "user", "parts": [prompt]},
+                {"role": "user", "parts": [gemini_file]},
+            ]
+        )
+        response = chat.send_message(prompt)
+        return response.text
+    except Exception as exc:  # noqa: BLE001
+        return f"An error occurred while processing the request: {exc}"
 
-  chat_session = model.start_chat(
-    history=[
-      {
-        "role": "user",
-        "parts": [
-          "explain and analyze this for me. don't be super verbose with your responses." + caption,
-        ],
-      },
-      {
-        "role": "user",
-        "parts": [
-          video_drive0,
-        ],
-      },
-    ]
-  )
 
-  try:
-    response = chat_session.send_message("explain and analyze this for me. don't be super verbose with your responses." + caption)
-  except Exception as e:
-    return "An error occurred while processing the request."
-  return response.text
+# ──────────────────────────────────────────────────────────────────────────────
+# Example usage
+# ──────────────────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    FILE_PATH = "your_file_here.mp4"
+    MIME_TYPE = "video/mp4"
+    CAPTION = " – here's the context you need."
+
+    print(get_llm_response_gemini_multimodal(FILE_PATH, CAPTION, MIME_TYPE))
