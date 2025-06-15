@@ -12,3 +12,5 @@ FLUX_API_KEY = os.getenv("FLUX_API_KEY")
 
 
 TG_BOT_USERNAME = "your_bot_username"
+
+OPENAI_API_KEY="test
