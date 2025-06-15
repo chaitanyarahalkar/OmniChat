@@ -1,124 +1,70 @@
-name: Goose PR Reviewer
+name: Goose PR Summary Comment
 
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
 permissions:
-  pull-requests: write   # allow us to create review comments
+  pull-requests: write   # needed for gh pr comment
   contents: read
 
-env:
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  GOOSE_DISABLE_KEYRING: "1"
+env:                     # <<— Goose looks for PROVIDER_API_KEY
+  PROVIDER_API_KEY: ${{ secrets.OPENAI_API_KEY }}   # rename secret if you prefer
+  GOOSE_DISABLE_KEYRING: "1"                        # skip desktop keyring
 
 jobs:
   review:
     runs-on: ubuntu-latest
 
     steps:
-    - name: ⬇️  Check out code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+    - uses: actions/checkout@v4
+      with: {fetch-depth: 0}
 
-    - name: 🛠️  Ensure jq is present (macOS & Ubuntu)
-      run: |
-        if ! command -v jq >/dev/null 2>&1; then
-          if command -v brew >/dev/null 2>&1; then
-            brew install jq
-          else
-            sudo apt-get update -y
-            sudo apt-get install -y jq
-          fi
-        fi
+    - name: Ensure jq is present
+      run: sudo apt-get update -y && sudo apt-get install -y jq
 
-    - name: 🔐 Authenticate gh
-      run: |
-        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+    - name: Authenticate gh
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-    - name: 🦢 Install Goose CLI
+    # ── Install Goose ─────────────────────────────────────────────────────
+    - name: Install Goose CLI
       run: |
         mkdir -p "$HOME/.local/bin"
         curl -fsSL https://github.com/block/goose/releases/download/stable/download_cli.sh \
           | CONFIGURE=false INSTALL_PATH="$HOME/.local/bin" bash
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-    - name: ⚙️  Minimal Goose config
+    - name: Tiny Goose config
       run: |
         mkdir -p ~/.config/goose
         printf 'GOOSE_PROVIDER: openai\nGOOSE_MODEL: gpt-4o\nkeyring: false\n' \
           > ~/.config/goose/config.yaml
 
-    - name: 📑 Fetch PR files + head SHA
+    # ── Gather the full diff and feed it to Goose ────────────────────────
+    - name: Build diff summary with Goose
+      id: goose_summarise
       run: |
-        gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files?per_page=100" \
-          > files.json
-        gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}" --jq .head.sha \
-          > head_sha.txt
+        # Pull full unified diff
+        gh pr diff ${{ github.event.pull_request.number }} > full.patch
 
-    - name: 🧩 Build hunks.json (Python)
+        # Create instruction
+        printf '%s\n' \
+          "You are a senior engineer reviewing a pull request." \
+          "" \
+          "Summarise the changes below; point out any potential issues and praise good practices." \
+          "Keep it under 250 words; bullet points welcome." \
+          "" \
+          "Diff follows:" \
+          "$(cat full.patch)" > instructions.txt
+
+        # Run Goose
+        COMMENT=$(goose run --instructions instructions.txt)
+        echo "COMMENT<<EOF" >> $GITHUB_ENV
+        echo "$COMMENT"     >> $GITHUB_ENV
+        echo "EOF"          >> $GITHUB_ENV
+
+    # ── Post one top-level PR comment ────────────────────────────────────
+    - name: Post summary comment
       run: |
-        python <<'PY'
-        import json, pathlib
-        files = json.load(open('files.json'))
-        commit_id = pathlib.Path('head_sha.txt').read_text().strip()
-        out_lines = []
-        for f in files:
-            patch = f.get('patch')
-            if not patch:
-                continue  # skip binaries
-            lines = patch.splitlines()
-            i = 0
-            while i < len(lines):
-                if lines[i].startswith('@@ '):
-                    header = lines[i]
-                    body_lines = []
-                    j = i + 1
-                    while j < len(lines) and not lines[j].startswith('@@ '):
-                        body_lines.append(lines[j])
-                        j += 1
-                    out_lines.append(json.dumps({
-                        "path": f["filename"],
-                        "commit_id": commit_id,
-                        "position": i + 1,     # diff-relative, 1-based
-                        "header": header,
-                        "body": "\n".join(body_lines)
-                    }, separators=(',', ':')))
-                    i = j
-                else:
-                    i += 1
-        pathlib.Path('hunks.json').write_text("\n".join(out_lines))
-        PY
-
-    - name: 📝 Review hunks with Goose
-      run: |
-        set -e
-        PR=${{ github.event.pull_request.number }}
-        REPO=${{ github.repository }}
-
-        while IFS= read -r HUNK; do
-          [ -z "$HUNK" ] && continue
-          FILE_PATH=$(echo "$HUNK" | jq -r .path)
-          COMMIT_ID=$(echo "$HUNK" | jq -r .commit_id)
-          POSITION=$(echo "$HUNK"  | jq -r .position)
-          HEADER=$(echo "$HUNK"    | jq -r .header)
-          BODY=$(echo "$HUNK"      | jq -r .body)
-
-          PROMPT=$(printf '%s\n' \
-            'You are a senior engineer reviewing a pull request.' \
-            '' \
-            '**Task**  Comment on the diff hunk below with constructive feedback or praise (≤ 60 words).' \
-            '' \
-            'Diff:' "$HEADER" "$BODY")
-
-          COMMENT=$(printf '%s\n' "$PROMPT" | goose run --quiet --instructions -)
-          [ -z "$COMMENT" ] && continue
-
-          gh api -X POST \
-            -f body="$COMMENT" \
-            -f commit_id="$COMMIT_ID" \
-            -f path="$FILE_PATH" \
-            -f position="$POSITION" \
-            "repos/$REPO/pulls/$PR/comments"
-        done < hunks.json
+        gh pr comment ${{ github.event.pull_request.number }} \
+          --body "$COMMENT"
