@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up GitHub CLI
-        uses: cli/gh-action@v2
+        uses: actions/setup-gh@v4
 
       - name: Gather PR information
         run: |
